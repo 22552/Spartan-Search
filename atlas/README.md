@@ -6,6 +6,8 @@ The static UI lives in [`/pages`](../pages) and is intended for Cloudflare Pages
 
 Production API: `https://atlas.h6e.workers.dev`
 
+Deployment trigger refreshed on 2026-08-31.
+
 ## Worker setup
 
 ```bash
