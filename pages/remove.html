@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Request removal from the Spartan Atlas index.">
+  <meta name="description" content="Request removal from the Spartan Atlas index by email.">
   <title>Index removal — Spartan Atlas</title>
   <link rel="stylesheet" href="./style.css">
 </head>
@@ -20,12 +20,12 @@
     <section class="removal-page">
       <p class="eyebrow">Index control</p>
       <h1 class="page-title">Remove a page<br>from Atlas.</h1>
-      <p class="page-lead">Spartan Atlas respects removal requests from site operators. Submit the Spartan URL you want removed from search results. Requests are reviewed before removal.</p>
+      <p class="page-lead">Spartan Atlas respects removal requests from site operators. Enter the Spartan URL below and your mail app will open with a pre-filled removal request. Requests are reviewed before removal.</p>
 
       <form id="removal-form" class="removal-form">
         <label>
           <span>Spartan URL *</span>
-          <input id="remove-url" name="url" type="url" required maxlength="2048" placeholder="spartan://example.org/page" autocomplete="url">
+          <input id="remove-url" name="url" type="text" required maxlength="2048" placeholder="spartan://example.org/page" autocomplete="url">
         </label>
 
         <label>
@@ -33,18 +33,8 @@
           <textarea id="remove-reason" name="reason" maxlength="1000" rows="5" placeholder="Why should this page or host be removed?"></textarea>
         </label>
 
-        <label>
-          <span>Contact <small>optional</small></span>
-          <input id="remove-contact" name="contact" type="text" maxlength="320" placeholder="Email, Finger address, etc.">
-        </label>
-
-        <label class="honeypot" aria-hidden="true">
-          <span>Website</span>
-          <input id="remove-website" name="website" type="text" tabindex="-1" autocomplete="off">
-        </label>
-
-        <button type="submit">Submit request</button>
-        <p class="form-note">Contact information is optional and is used only if verification or clarification is needed. A request does not automatically remove content.</p>
+        <button type="submit">Open email app</button>
+        <p class="form-note">No removal request is stored by this page. Your email is sent only when you send it from your mail app.</p>
         <p id="removal-status" class="state" role="status" aria-live="polite"></p>
       </form>
     </section>
