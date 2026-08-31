@@ -1,8 +1,10 @@
-# Spartan Atlas
+# Spartan Atlas API
 
-Cloudflare Workers + Turso frontend for the Spartan Search index.
+Cloudflare Worker + Turso API for the Spartan Search index.
 
-## Setup
+The static UI lives in [`/pages`](../pages) and is intended for Cloudflare Pages.
+
+## Worker setup
 
 ```bash
 cd atlas
@@ -11,13 +13,13 @@ npx wrangler secret put TURSO_AUTH_TOKEN
 npm run deploy
 ```
 
-`TURSO_DATABASE_URL` is already configured in `wrangler.jsonc` as:
+`TURSO_DATABASE_URL` is configured in `wrangler.jsonc` as:
 
 ```text
 libsql://spartanatlas-8noh.aws-ap-northeast-1.turso.io
 ```
 
-Use a **read-only** Turso database token for the Worker.
+Use a **read-only** Turso database token.
 
 For local development, create `atlas/.dev.vars` (ignored by Git):
 
@@ -31,10 +33,9 @@ Then run:
 npm run dev
 ```
 
-## Routes
+## API
 
-- `/` — search UI
-- `/api/search?q=...` — JSON search API
-- `/api/stats` — indexed page/host counts
+- `GET /api/search?q=...` — search the existing `pages_fts` FTS5 index
+- `GET /api/stats` — indexed page/host counts
 
-The API uses the existing `pages_fts` FTS5 index and falls back to `LIKE` for short queries or when FTS is unavailable.
+The search endpoint falls back to `LIKE` for short queries or when FTS is unavailable. CORS is enabled because the UI may be hosted separately on Cloudflare Pages.
