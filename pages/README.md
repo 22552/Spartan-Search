@@ -2,6 +2,8 @@
 
 Static frontend for Cloudflare Pages.
 
+> **Note:** Spartan Atlas is not affiliated with, derived from, or otherwise related to [Alumniminium/atlas](https://github.com/Alumniminium/atlas). The similar name is coincidental.
+
 ## Cloudflare Pages
 
 Use `pages` as the project root/output directory. No build command is required.
