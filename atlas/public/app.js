@@ -75,9 +75,7 @@ async function runSearch(query) {
 
       const title = document.createElement('h2');
       const link = document.createElement('a');
-      link.href = toGatewayUrl(item.url);
-      link.target = '_blank';
-      link.rel = 'noreferrer';
+      link.href = item.url;
       link.textContent = item.title || item.url;
       title.append(link);
 
@@ -100,8 +98,4 @@ async function runSearch(query) {
 
 function compact(value) {
   return value.replace(/\s+/g, ' ').trim();
-}
-
-function toGatewayUrl(url) {
-  return `https://portal.mozz.us/gemini/${encodeURIComponent(url)}`;
 }
