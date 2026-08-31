@@ -1,1 +1,1 @@
-globalThis.SPARTAN_ATLAS_API_BASE = "";
+globalThis.SPARTAN_ATLAS_API_BASE = "https://atlas.h6e.workers.dev";
