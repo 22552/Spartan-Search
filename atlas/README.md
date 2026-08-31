@@ -2,6 +2,8 @@
 
 Cloudflare Worker + Turso API for the Spartan Search index.
 
+> **Note:** Spartan Atlas is not affiliated with, derived from, or otherwise related to [Alumniminium/atlas](https://github.com/Alumniminium/atlas). The similar name is coincidental.
+
 The static UI lives in [`/pages`](../pages) and is intended for Cloudflare Pages.
 
 Production API: `https://atlas.h6e.workers.dev`
