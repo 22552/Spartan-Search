@@ -48,6 +48,11 @@ async function runSearch(query) {
     return;
   }
 
+  if ([...query.normalize('NFKC')].length < 3) {
+    results.innerHTML = '<p class="state error">3文字未満は短すぎます！</p>';
+    return;
+  }
+
   results.innerHTML = '<p class="state">Searching…</p>';
 
   try {
@@ -80,11 +85,21 @@ async function runSearch(query) {
       link.textContent = item.title || item.url;
       title.append(link);
 
+      const actions = document.createElement('div');
+      actions.className = 'result-actions';
+
+      const proxy = document.createElement('a');
+      proxy.href = toProxyUrl(item.url);
+      proxy.target = '_blank';
+      proxy.rel = 'noreferrer';
+      proxy.textContent = 'プロキシで開く ↗';
+      actions.append(proxy);
+
       const snippet = document.createElement('p');
       snippet.className = 'snippet';
       snippet.textContent = compact(item.snippet || '');
 
-      article.append(address, title, snippet);
+      article.append(address, title, actions, snippet);
       fragment.append(article);
     }
 
@@ -99,4 +114,14 @@ async function runSearch(query) {
 
 function compact(value) {
   return value.replace(/\s+/g, ' ').trim();
+}
+
+function toProxyUrl(value) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'spartan:') return value;
+    return `https://portal.mozz.us/spartan/${url.host}${url.pathname}`;
+  } catch {
+    return value;
+  }
 }
