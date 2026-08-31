@@ -4,6 +4,8 @@ Cloudflare Worker + Turso API for the Spartan Search index.
 
 The static UI lives in [`/pages`](../pages) and is intended for Cloudflare Pages.
 
+Production API: `https://atlas.h6e.workers.dev`
+
 ## Worker setup
 
 ```bash
