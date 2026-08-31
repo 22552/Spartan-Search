@@ -2,13 +2,14 @@ import { createClient } from "@libsql/client/web";
 
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
-  "cache-control": "no-store",
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET, OPTIONS",
 };
+const SEARCH_CACHE_CONTROL = "public, max-age=60, s-maxage=900, stale-while-revalidate=86400";
+const STATS_CACHE_CONTROL = "public, max-age=300, s-maxage=1800, stale-while-revalidate=86400";
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS") {
@@ -20,8 +21,8 @@ export default {
     }
 
     try {
-      if (url.pathname === "/api/search") return await search(url, env);
-      if (url.pathname === "/api/stats") return await stats(env);
+      if (url.pathname === "/api/search") return await search(request, url, env, ctx);
+      if (url.pathname === "/api/stats") return await stats(request, env, ctx);
       return json({ error: "not found" }, 404);
     } catch (error) {
       console.error(error);
@@ -39,14 +40,19 @@ function client(env) {
   });
 }
 
-async function search(url, env) {
+async function search(request, url, env, ctx) {
   const query = (url.searchParams.get("q") || "")
     .normalize("NFKC")
     .replace(/\s+/g, " ")
     .trim();
 
   if (!query) return json({ query: "", mode: null, results: [] });
+  if ([...query].length < 3) return json({ error: "3文字未満は短すぎます！" }, 400);
   if (query.length > 160) return json({ error: "query too long" }, 400);
+
+  const cache = caches.default;
+  const cached = await cache.match(request);
+  if (cached) return cached;
 
   const requestedLimit = Number(url.searchParams.get("limit") || 20);
   const limit = Number.isFinite(requestedLimit)
@@ -55,6 +61,7 @@ async function search(url, env) {
 
   const terms = query.split(" ").filter(Boolean);
   const db = client(env);
+  let payload;
 
   if (terms.every((term) => [...term].length >= 3)) {
     try {
@@ -76,39 +83,49 @@ async function search(url, env) {
         args: [ftsQuery, limit],
       });
 
-      return json({ query, mode: "fts5", results: normalizeRows(result.rows) });
+      payload = { query, mode: "fts5", results: normalizeRows(result.rows) };
     } catch (error) {
       console.warn("FTS5 failed, falling back to LIKE", error);
     }
   }
 
-  const conditions = terms.map(() => "(title LIKE ? ESCAPE '\\' OR body LIKE ? ESCAPE '\\')");
-  const args = [];
+  if (!payload) {
+    const conditions = terms.map(() => "(title LIKE ? ESCAPE '\\' OR body LIKE ? ESCAPE '\\')");
+    const args = [];
 
-  for (const term of terms) {
-    const pattern = `%${escapeLike(term)}%`;
-    args.push(pattern, pattern);
+    for (const term of terms) {
+      const pattern = `%${escapeLike(term)}%`;
+      args.push(pattern, pattern);
+    }
+
+    const result = await db.execute({
+      sql: `SELECT
+              url,
+              COALESCE(NULLIF(title, ''), url) AS title,
+              CASE
+                WHEN length(body) > 240 THEN substr(body, 1, 240) || ' …'
+                ELSE body
+              END AS snippet
+            FROM pages
+            WHERE status = 2 AND ${conditions.join(" AND ")}
+            ORDER BY CASE WHEN title LIKE ? THEN 0 ELSE 1 END, url
+            LIMIT ?`,
+      args: [...args, `%${escapeLike(query)}%`, limit],
+    });
+
+    payload = { query, mode: "like", results: normalizeRows(result.rows) };
   }
 
-  const result = await db.execute({
-    sql: `SELECT
-            url,
-            COALESCE(NULLIF(title, ''), url) AS title,
-            CASE
-              WHEN length(body) > 240 THEN substr(body, 1, 240) || ' …'
-              ELSE body
-            END AS snippet
-          FROM pages
-          WHERE status = 2 AND ${conditions.join(" AND ")}
-          ORDER BY CASE WHEN title LIKE ? THEN 0 ELSE 1 END, url
-          LIMIT ?`,
-    args: [...args, `%${escapeLike(query)}%`, limit],
-  });
-
-  return json({ query, mode: "like", results: normalizeRows(result.rows) });
+  const response = json(payload, 200, SEARCH_CACHE_CONTROL);
+  ctx.waitUntil(cache.put(request, response.clone()));
+  return response;
 }
 
-async function stats(env) {
+async function stats(request, env, ctx) {
+  const cache = caches.default;
+  const cached = await cache.match(request);
+  if (cached) return cached;
+
   const db = client(env);
   const result = await db.execute(`
     SELECT
@@ -119,7 +136,10 @@ async function stats(env) {
     WHERE status = 2
   `);
 
-  return json(normalizeRows(result.rows)[0] || { pages: 0, hosts: 0, last_fetched_at: null });
+  const payload = normalizeRows(result.rows)[0] || { pages: 0, hosts: 0, last_fetched_at: null };
+  const response = json(payload, 200, STATS_CACHE_CONTROL);
+  ctx.waitUntil(cache.put(request, response.clone()));
+  return response;
 }
 
 function escapeLike(value) {
@@ -135,9 +155,9 @@ function normalizeRows(rows) {
   ));
 }
 
-function json(body, status = 200) {
+function json(body, status = 200, cacheControl = "no-store") {
   return new Response(JSON.stringify(body), {
     status,
-    headers: JSON_HEADERS,
+    headers: { ...JSON_HEADERS, "cache-control": cacheControl },
   });
 }
