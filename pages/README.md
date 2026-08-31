@@ -6,10 +6,16 @@ Static frontend for Cloudflare Pages.
 
 Use `pages` as the project root/output directory. No build command is required.
 
-By default the frontend calls `/api` on the same origin. If the API Worker is on a separate `workers.dev` or custom domain, edit `config.js`:
+The frontend calls the Atlas API at:
+
+```text
+https://atlas.h6e.workers.dev
+```
+
+The endpoint is configured in `config.js`:
 
 ```js
-globalThis.SPARTAN_ATLAS_API_BASE = "https://your-api.example.com";
+globalThis.SPARTAN_ATLAS_API_BASE = "https://atlas.h6e.workers.dev";
 ```
 
 The API Worker lives in [`/atlas`](../atlas) and allows cross-origin GET requests.
