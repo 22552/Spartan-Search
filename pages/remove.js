@@ -1,16 +1,14 @@
 const form = document.querySelector('#removal-form');
 const status = document.querySelector('#removal-status');
-const apiBase = (globalThis.SPARTAN_ATLAS_API_BASE || '').replace(/\/$/, '');
+const removalEmail = (globalThis.SPARTAN_ATLAS_REMOVAL_EMAIL || '').trim();
 
-form.addEventListener('submit', async (event) => {
+form.addEventListener('submit', (event) => {
   event.preventDefault();
   status.className = 'state';
-  status.textContent = 'Submitting…';
+  status.textContent = '';
 
   const url = document.querySelector('#remove-url').value.trim();
   const reason = document.querySelector('#remove-reason').value.trim();
-  const contact = document.querySelector('#remove-contact').value.trim();
-  const website = document.querySelector('#remove-website').value.trim();
 
   if (!url.toLowerCase().startsWith('spartan://')) {
     status.className = 'state error';
@@ -18,21 +16,22 @@ form.addEventListener('submit', async (event) => {
     return;
   }
 
-  try {
-    const response = await fetch(`${apiBase}/api/removal-request`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ url, reason, contact, website }),
-    });
-    const data = await response.json();
-
-    if (!response.ok) throw new Error(data.error || 'Request failed.');
-
-    form.reset();
-    status.className = 'state success';
-    status.textContent = `Request received. ID: ${data.id}`;
-  } catch (error) {
+  if (!removalEmail) {
     status.className = 'state error';
-    status.textContent = error.message || 'Request failed.';
+    status.textContent = 'Removal email is not configured.';
+    return;
   }
+
+  const subject = `Spartan Atlas index removal: ${url}`;
+  const body = [
+    `Spartan URL: ${url}`,
+    '',
+    'Reason:',
+    reason || '(not provided)',
+    '',
+    'I am requesting that this URL be removed from the Spartan Atlas search index.',
+  ].join('\n');
+
+  const params = new URLSearchParams({ subject, body });
+  location.href = `mailto:${removalEmail}?${params}`;
 });
