@@ -3,14 +3,16 @@ import { createClient } from "@libsql/client/web";
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
   "cache-control": "no-store",
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET, OPTIONS",
 };
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if (!url.pathname.startsWith("/api/")) {
-      return env.ASSETS.fetch(request);
+    if (request.method === "OPTIONS") {
+      return new Response(null, { status: 204, headers: JSON_HEADERS });
     }
 
     if (request.method !== "GET") {
@@ -88,8 +90,6 @@ async function search(url, env) {
     args.push(pattern, pattern);
   }
 
-  args.push(limit);
-
   const result = await db.execute({
     sql: `SELECT
             url,
@@ -102,7 +102,7 @@ async function search(url, env) {
           WHERE status = 2 AND ${conditions.join(" AND ")}
           ORDER BY CASE WHEN title LIKE ? THEN 0 ELSE 1 END, url
           LIMIT ?`,
-    args: [...args.slice(0, -1), `%${escapeLike(query)}%`, limit],
+    args: [...args, `%${escapeLike(query)}%`, limit],
   });
 
   return json({ query, mode: "like", results: normalizeRows(result.rows) });
